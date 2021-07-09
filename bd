@@ -1,0 +1,83 @@
+import sqlite3
+
+
+class BD:
+    def __init__(self, database):
+        self.connect = sqlite3.connect(database, check_same_thread=False)
+        self.cursor = self.connect.cursor()
+
+    def exists_id(self, user_id):
+        with self.connect:
+            result = self.cursor.execute('SELECT * FROM `father` WHERE `id` = ?', (user_id,)).fetchall()
+            return bool(len(result))
+
+    def add_id(self, user_id):
+        with self.connect:
+            return self.cursor.execute('INSERT INTO `father` (`id`) VALUES (?)', (user_id,))
+
+    def status_find(self, user_id):
+        with self.connect:
+            result = self.cursor.execute('SELECT `status` FROM `father` WHERE `id` == ? ', (user_id,)).fetchone()
+            return result
+
+    def status_update(self, status, user_id):
+        with self.connect:
+            return self.cursor.execute('UPDATE `father` SET `status` = ? WHERE `id` = ?', (status, user_id,))
+
+    def reg_status_update(self, reg_status, user_id):
+        with self.connect:
+            return self.cursor.execute('UPDATE `father` SET `reg_status` = ? WHERE `id` = ?', (reg_status, user_id,))
+
+    def reg_status_find(self, user_id):
+        with self.connect:
+            result = self.cursor.execute('SELECT `reg_status` FROM `father` WHERE `id` == ? ', (user_id,)).fetchone()
+            return result
+
+    def bot_token(self, bot_token, user_id):
+        with self.connect:
+            return self.cursor.execute('UPDATE `father` SET `bot_token` = ? WHERE `id` = ?', (bot_token, user_id,))
+
+    def api_id(self, api_id, user_id):
+        with self.connect:
+            return self.cursor.execute('UPDATE `father` SET `api_id` = ? WHERE `id` = ?', (api_id, user_id,))
+
+    def get_api_id(self, user_id):
+        with self.connect:
+            result = self.cursor.execute('SELECT `api_id` FROM `father` WHERE `id` == ? ', (user_id,)).fetchone()
+            return result
+
+    def api_hash(self, api_hash, user_id):
+        with self.connect:
+            return self.cursor.execute('UPDATE `father` SET `api_hash` = ? WHERE `id` = ?', (api_hash, user_id,))
+
+    def get_api_hash(self, user_id):
+        with self.connect:
+            result = self.cursor.execute('SELECT `api_hash` FROM `father` WHERE `id` == ? ', (user_id,)).fetchone()
+            return result
+
+    def username(self, username, user_id):
+        with self.connect:
+            return self.cursor.execute('UPDATE `father` SET `username` = ? WHERE `id` = ?', (username, user_id,))
+
+    def get_username(self, user_id):
+        with self.connect:
+            result = self.cursor.execute('SELECT `username` FROM `father` WHERE `id` == ? ', (user_id,)).fetchone()
+            return result
+
+    def phone(self, phone, user_id):
+        with self.connect:
+            return self.cursor.execute('UPDATE `father` SET `phone` = ? WHERE `id` = ?', (phone, user_id,))
+
+    def get_phone(self, user_id):
+        with self.connect:
+            result = self.cursor.execute('SELECT `phone` FROM `father` WHERE `id` == ? ', (user_id,)).fetchone()
+            return result
+
+    def get_phone_code(self, user_id):
+        with self.connect:
+            result = self.cursor.execute('SELECT `phone_code` FROM `father` WHERE `id` == ? ', (user_id,)).fetchone()
+            return result
+
+    def phone_code(self, phone_code, user_id):
+        with self.connect:
+            return self.cursor.execute('UPDATE `father` SET `phone_code` = ? WHERE `id` = ?', (phone_code, user_id,))
