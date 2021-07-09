@@ -1,0 +1,143 @@
+import re
+
+from aiogram import Bot, Dispatcher, executor, types
+
+from other import BD
+from id_grabber import now
+
+bot_token = '=)'
+db = BD('db.db')
+bot = Bot(token=bot_token)
+dp = Dispatcher(bot)
+
+
+@dp.message_handler(commands=['start'])
+async def hello(message):
+    user_id = message.from_user.id
+    if not db.exists_id(user_id):
+        db.add_id(user_id)
+        await message.answer('Добро пожаловать в Бота Менеджера Ваших телеграмм каналов!\n'
+                             'Я вижу Вы у нас впервые. Давайте пройдем регистрацию '
+                             'и заполнение всех необходимых данных.\n'
+                             'Напишите ДА - если согласны!')
+        db.status_update('check', user_id)
+
+    else:
+        await message.answer('Добро пожаловать в Бота Менеджера Ваших телеграмм каналов!\n'
+                             'Я вижу Вы у нас бывали. Давайте пройдем регистрацию '
+                             'и заполнение всех необходимых данных.\n'
+                             'Напишите ДА - если согласны!')
+        db.status_update('check', user_id)
+
+
+@dp.message_handler()
+async def status(message: types.Message):
+    user_id = message.from_user.id
+    if db.status_find(user_id)[0] == 'registration':
+        await registration(message)
+    if db.status_find(user_id)[0] == 'check':
+        await check(message)
+
+
+async def check(message: types.Message):
+    user_id = message.from_user.id
+    if message.text.lower() == 'да':
+        await bot.send_message(user_id, 'Отлично!\n'
+                                        'Начинаем регистрацию!\n'
+                                        'Пришлите Ваш Токен Бота.\n'
+                                        'Инструкция - https://telegra.ph/Instrukciya---Token-bot-06-24')
+        db.status_update('registration', user_id)
+        db.reg_status_update('bot_token', user_id)
+
+
+async def registration(message: types.Message):
+    user_id = message.from_user.id
+    # Получаем BOT TOKEN
+    if db.reg_status_find(user_id)[0] == 'bot_token':
+        if bool(re.fullmatch(pattern=r'\d{10}:.{35}', string=message.text)):
+            await bot.send_message(user_id, 'Токен введен верно!\n'
+                                            'Теперь нам нужно будет создать приложение - сессию,\n'
+                                            'для того что бы брать посты с любого канала.\n'
+                                            'Инструкция - https://telegra.ph/Instrukciya---Sozdanie-prilozheniya-06'
+                                            '-24\n '
+                                            'Теперь присылайте API ID')
+            db.reg_status_update('api_id', user_id)
+            db.bot_token(message.text, user_id)
+        else:
+            await bot.send_message(user_id, 'Неверный токен!\n'
+                                            'Попробуйте еще раз!\n'
+                                            'Если у Вас не получается - пишите в тех.поддержку.')
+    # Получаем API ID
+    elif db.reg_status_find(user_id)[0] == 'api_id':
+        if bool(re.fullmatch(pattern=r'\d{7}', string=str(message.text))):
+            await bot.send_message(user_id, 'API ID введен верно!\n'
+                                            'Инструкция - https://telegra.ph/Instrukciya---Sozdanie-prilozheniya-06'
+                                            '-24\n '
+                                            'Теперь присылайте API HASH')
+            db.reg_status_update('api_hash', user_id)
+            db.api_id(message.text, user_id)
+        else:
+            await bot.send_message(user_id, 'Неверный API ID!\n'
+                                            'Попробуйте еще раз!\n'
+                                            'Если у Вас не получается - пишите в тех.поддержку.')
+
+    # Получаем API HASH
+    elif db.reg_status_find(user_id)[0] == 'api_hash':
+        if bool(re.fullmatch(pattern=r'\d|\w{32}', string=str(message.text))):
+            await bot.send_message(user_id, 'API HASH введен верно!\n'
+                                            'Инструкция - https://telegra.ph/Instrukciya---Sozdanie-prilozheniya-06'
+                                            '-24\n '
+                                            'Теперь присылайте Ваш username')
+            db.reg_status_update('username', user_id)
+            db.api_hash(message.text, user_id)
+        else:
+            await bot.send_message(user_id, 'Неверный API HASH!\n'
+                                            'Попробуйте еще раз!\n'
+                                            'Если у Вас не получается - пишите в тех.поддержку.')
+
+    # Получаем USERNAME
+    elif db.reg_status_find(user_id)[0] == 'username':
+        if bool(re.fullmatch(pattern=r'^(?![-._])(?!.*[_.-]{2})[\w.-]{5,32}(?<![-._])$',
+                             string=str(message.text.lower()))):
+            await bot.send_message(user_id, 'Ваш USERNAME введен верно!\n'
+                                            'Инструкция - https://telegra.ph/Instrukciya---Sozdanie-prilozheniya-06'
+                                            '-24\n '
+                                            'Теперь присылайте Ваш номер телефона в виде 79999999999')
+            db.reg_status_update('phone', user_id)
+            db.username(message.text.lower(), user_id)
+        else:
+            await bot.send_message(user_id, 'Неверный USERNAME!\n'
+                                            'Попробуйте еще раз!\n'
+                                            'Если у Вас не получается - пишите в тех.поддержку.')
+
+    # Получаем PHONE
+    elif db.reg_status_find(user_id)[0] == 'phone':
+        if bool(re.fullmatch(pattern=r'7\d{10}',
+                             string=str(message.text).replace(' ', '').replace('+', ''))):
+            await bot.send_message(user_id, 'Ваш номер телефона введен верно!\n'
+                                            'Инструкция - https://telegra.ph/Instrukciya---Sozdanie-prilozheniya-06'
+                                            '-24\n '
+                                            'Проверяем Ваши данные!'
+                                            'Напишите любое сообщение =)')
+            db.reg_status_update('code', user_id)
+            db.phone(message.text, user_id)
+        else:
+            await bot.send_message(user_id, 'Неверный номер телефона!\n'
+                                            'Попробуйте еще раз!\n'
+                                            'Если у Вас не получается - пишите в тех.поддержку.')
+    elif db.reg_status_find(user_id)[0] == 'code':
+        try:
+            await now()
+        except RuntimeError:
+            now().close()
+            await bot.send_message(user_id, 'Пришлите код подтверждения.')
+            db.reg_status_update('confirm', user_id)
+
+    elif db.reg_status_find(user_id)[0] == 'confirm':
+        print(message.text)
+        db.phone_code(message.text, user_id)
+        await now()
+        db.reg_status_update('success', user_id)
+
+if __name__ == '__main__':
+    executor.start_polling(dp, skip_updates=True)
